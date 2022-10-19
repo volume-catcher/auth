@@ -18,3 +18,8 @@ spring:
         show_sql: true
     generate-ddl: true
     defer-datasource-initialization: true
+
+# JWT
+jwt:
+  secret: dGVhbWRldi1hdXRoLWp3dC1teS1zZWNyZXQta2V5LXRlYW1kZXYtYXV0aC1qd3QtbXktc2VjcmV0LWtleS10ZWFtZGV2LWF1dGgtand0LW15LXNlY3JldC1rZXktdGVhbWRldi1hdXRoLWp3dC1teS1zZWNyZXQta2V5Cg==
+  token-validity-in-seconds: 86400

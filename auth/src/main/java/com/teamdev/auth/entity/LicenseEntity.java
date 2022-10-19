@@ -15,7 +15,7 @@ import javax.persistence.*;
 public class LicenseEntity extends BaseTimeEntity {
 
     @Id
-    @Column(name = "license_key", columnDefinition ="CHAR(19)", updatable = false)
+    @Column(name = "license_key", columnDefinition = "CHAR(19)", updatable = false)
     @Comment("라이선스키")
     private String key;
 

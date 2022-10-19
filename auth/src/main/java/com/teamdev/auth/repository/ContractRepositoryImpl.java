@@ -37,6 +37,7 @@ public class ContractRepositoryImpl implements ContractRepositoryCustom {
     public ContractDto getContractInfoQ(String licenseKey, String productName) {
         return jpaQueryFactory
                 .select(Projections.constructor(ContractDto.class,
+                        contractEntity.id,
                         licenseEntity.key,
                         productEntity.name,
                         contractEntity.numOfAuthAvailable,
@@ -46,6 +47,7 @@ public class ContractRepositoryImpl implements ContractRepositoryCustom {
                                         .select(authEntity.id.count())
                                         .from(authEntity)
                                         .where(authEntity.contract.eq(contractEntity))),
+                        contractEntity.isActivated,
                         contractEntity.expireAt)
                 )
                 .from(contractEntity)

@@ -5,7 +5,6 @@ import com.teamdev.auth.entity.AuthEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
 
 import static com.teamdev.auth.entity.QAuthEntity.authEntity;
 
@@ -16,11 +15,20 @@ public class AuthRepositoryImpl implements AuthRepositoryCustom {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public AuthEntity findOneAuthByDeviceAndContractIdQ(UUID device, Integer contractId) {
+    public AuthEntity findOneAuthByDeviceAndContractIdQ(String device, Integer contractId) {
         return jpaQueryFactory
                 .select(authEntity)
                 .from(authEntity)
                 .where(authEntity.device.eq(device))
+                .where(authEntity.contract.id.eq(contractId))
+                .fetchOne();
+    }
+
+    @Override
+    public Long findNumOfAuthByContractIdQ(Integer contractId) {
+        return jpaQueryFactory
+                .select(authEntity.count())
+                .from(authEntity)
                 .where(authEntity.contract.id.eq(contractId))
                 .fetchOne();
     }

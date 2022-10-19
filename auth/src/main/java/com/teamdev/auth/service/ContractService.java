@@ -2,7 +2,7 @@ package com.teamdev.auth.service;
 
 import com.teamdev.auth.dto.ContractDto;
 import com.teamdev.auth.exception.ErrorMessage;
-import com.teamdev.auth.exception.InvalidException;
+import com.teamdev.auth.exception.ForbiddenException;
 import com.teamdev.auth.repository.ContractRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ public class ContractService {
         ContractDto contractDto = contractRepository.getContractInfoQ(licenseKey, productName);
 
         if (contractDto == null) {
-            throw new InvalidException(ErrorMessage.CONTRACT_INVALID);
+            throw new ForbiddenException(ErrorMessage.CONTRACT_FORBIDDEN);
         }
 
         return contractDto;

@@ -2,11 +2,12 @@ package com.teamdev.auth.controller;
 
 import com.teamdev.auth.dto.AuthDto;
 import com.teamdev.auth.dto.AuthRequestDto;
+import com.teamdev.auth.jwt.TokenProvider;
 import com.teamdev.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -15,15 +16,16 @@ import javax.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenProvider tokenProvider;
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public AuthDto createAuth(@Valid @RequestBody AuthRequestDto authRequestDto) {
-        return authService.createAuth(authRequestDto);
-    }
+    public AuthDto getAuth(HttpServletRequest request, @Valid @RequestBody AuthRequestDto authRequestDto) {
+        String token = tokenProvider.getToken(request);
 
-    @GetMapping
-    public AuthDto getAuth(@Valid @RequestBody AuthRequestDto authRequestDto) {
-        return authService.getAuth(authRequestDto);
+        if (token == null) {
+            return authService.createAuth(authRequestDto);
+        } else {
+            return authService.getAuth(authRequestDto, token);
+        }
     }
 }

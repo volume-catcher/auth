@@ -5,7 +5,9 @@ import com.teamdev.auth.dto.AuthRequestDto;
 import com.teamdev.auth.entity.AuthEntity;
 import com.teamdev.auth.entity.ContractEntity;
 import com.teamdev.auth.exception.ErrorMessage;
-import com.teamdev.auth.exception.InvalidException;
+import com.teamdev.auth.exception.ForbiddenException;
+import com.teamdev.auth.exception.NotFoundException;
+import com.teamdev.auth.jwt.TokenProvider;
 import com.teamdev.auth.repository.AuthRepository;
 import com.teamdev.auth.repository.ContractRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -22,29 +24,20 @@ public class AuthService {
 
     private final AuthRepository authRepository;
     private final ContractRepository contractRepository;
+    private final TokenProvider tokenProvider;
 
+    @Transactional
     public AuthDto createAuth(AuthRequestDto authRequestDto) {
         ContractEntity contractEntity = contractRepository
                 .findOneContractByLicenseKeyAndProductNameQ(
-                        authRequestDto.getLicenseKey(), authRequestDto.getProductName()
-                );
+                        authRequestDto.getLicenseKey(), authRequestDto.getProductName());
 
-        if (!isValidContract(contractEntity)) {
-            throw new InvalidException(ErrorMessage.CONTRACT_INVALID);
+        if (contractEntity == null) {
+            throw new NotFoundException(ErrorMessage.CONTRACT_NOT_FOUND);
         }
 
-        //TODO: return jwt
-        return null;
-    }
-
-    public AuthDto getAuth(AuthRequestDto authRequestDto) {
-        ContractEntity contractEntity = contractRepository
-                .findOneContractByLicenseKeyAndProductNameQ(
-                        authRequestDto.getLicenseKey(), authRequestDto.getProductName()
-                );
-
         if (!isValidContract(contractEntity)) {
-            throw new InvalidException(ErrorMessage.CONTRACT_INVALID);
+            throw new ForbiddenException(ErrorMessage.CONTRACT_FORBIDDEN);
         }
 
         AuthEntity authEntity = authRepository
@@ -52,12 +45,37 @@ public class AuthService {
                         authRequestDto.getDevice(), contractEntity.getId()
                 );
 
-        if (!isValidAuth(authEntity, authRequestDto.getDevice())) {
-            throw new InvalidException(ErrorMessage.AUTH_INVALID);
+        if (authEntity == null) {
+            Long numOfAuth = authRepository.findNumOfAuthByContractIdQ(contractEntity.getId());
+
+            if (numOfAuth >= contractEntity.getNumOfAuthAvailable()) {
+                throw new ForbiddenException(ErrorMessage.EXCEED_NUM_OF_AUTH_AVAILABLE_FORBIDDEN);
+            }
+
+            AuthEntity newAuthEntity = AuthEntity.builder()
+                    .device(authRequestDto.getDevice())
+                    .isActivated(true)
+                    .contract(contractEntity)
+                    .build();
+
+            authRepository.save(newAuthEntity);
+        } else {
+            if (!isValidAuth(authEntity, authRequestDto.getDevice())) {
+                throw new ForbiddenException(ErrorMessage.AUTH_FORBIDDEN);
+            }
         }
 
-        //TODO: return jwt
-        return null;
+        String jwt = tokenProvider.createToken(authRequestDto.getDevice());
+
+        return new AuthDto(jwt);
+    }
+
+    public AuthDto getAuth(AuthRequestDto authRequestDto, String token) {
+        if (tokenProvider.validateToken(token, authRequestDto.getDevice())) {
+            return new AuthDto(token);
+        }
+
+        return createAuth(authRequestDto);
     }
 
     private boolean isValidContract(ContractEntity contractEntity) {
@@ -69,7 +87,7 @@ public class AuthService {
         return false;
     }
 
-    private boolean isValidAuth(AuthEntity authEntity, UUID device) {
+    private boolean isValidAuth(AuthEntity authEntity, String device) {
         if (authEntity != null) {
             return authEntity.getIsActivated() && authEntity.getDevice().equals(device);
         }
