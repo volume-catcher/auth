@@ -1,6 +1,7 @@
 package com.teamdev.auth.jwt;
 
-import com.teamdev.auth.exception.UnmatchedDeviceException;
+import com.teamdev.auth.exception.ErrorMessage;
+import com.teamdev.auth.exception.ForbiddenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -73,7 +74,7 @@ public class TokenProvider implements InitializingBean {
             String deviceInClaim = claims.get(DEVICE_KEY).toString();
 
             if (!device.equals(deviceInClaim)) {
-                throw new UnmatchedDeviceException();
+                throw new ForbiddenException(ErrorMessage.DEVICE_FORBIDDEN);
             }
 
             return true;
@@ -85,8 +86,6 @@ public class TokenProvider implements InitializingBean {
             log.info("지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {
             log.info("JWT 토큰이 잘못되었습니다.");
-        } catch (UnmatchedDeviceException e) {
-            log.info("기기 정보가 일치하지 않습니다.");
         }
         return false;
     }
